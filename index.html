@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RivalScan — Side-by-Side Competitor Intelligence</title>
+<style>
+  :root{
+    --glass: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.14);
+    --accent: #a78bfa;
+    --accent2: #f472b6;
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    font-weight:300;
+    background: radial-gradient(circle at 15% 85%, #1e0f2e 0%, #0d0a14 45%, #050507 100%);
+    color: var(--text); min-height:100vh; position:relative; overflow-x:hidden;
+  }
+  .blob{ position:fixed; border-radius:50%; filter: blur(90px); opacity:0.32; z-index:0; animation: float 22s ease-in-out infinite;}
+  .blob1{ width:480px; height:480px; background:#a78bfa; top:-140px; left:20%;}
+  .blob2{ width:420px; height:420px; background:#f472b6; bottom:-140px; right:-100px; animation-delay:-10s;}
+  @keyframes float{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(30px,-25px) scale(1.06);} }
+
+  .wrap{ position:relative; z-index:1; max-width:1040px; margin:0 auto; padding:56px 24px 80px;}
+  header{ text-align:center; margin-bottom:36px;}
+  header h1{ font-size:2.5rem; font-weight:200; letter-spacing:-0.02em;
+    background: linear-gradient(120deg,#fff,#e5c7ff); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  header p{ color:var(--muted); margin-top:10px; font-size:0.95rem;}
+
+  .glass{ background:var(--glass); border:1px solid var(--glass-border); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); border-radius:20px; padding:28px; box-shadow:0 8px 32px rgba(0,0,0,0.35);}
+  label{ display:block; font-size:0.78rem; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.03em;}
+  input{ width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:var(--text); padding:12px 14px; border-radius:12px; font-size:0.95rem; outline:none; font-family:inherit;}
+  input:focus{ border-color:var(--accent); background:rgba(255,255,255,0.07);}
+  .row{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px;}
+  .row > div{ flex:1; min-width:220px;}
+  button.primary{ padding:14px 20px; border:none; border-radius:14px; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#1a0f26; font-weight:600; font-size:1rem; cursor:pointer; box-shadow:0 8px 24px rgba(167,139,250,0.3); transition:all 0.15s ease;}
+  button.primary:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(167,139,250,0.45);}
+  button.primary:disabled{ opacity:0.5; cursor:not-allowed; transform:none;}
+  .hint{ font-size:0.78rem; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .hint a{ color:var(--accent); text-decoration:none;}
+
+  #status{ text-align:center; margin:22px 0; color:var(--muted); font-size:0.9rem; min-height:20px;}
+  .spinner{ width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); border-top-color:var(--accent); display:inline-block; vertical-align:middle; margin-right:8px; animation:spin 0.8s linear infinite;}
+  @keyframes spin{ to{transform:rotate(360deg);} }
+
+  .compare-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:24px; }
+  @media (max-width:760px){ .compare-grid{ grid-template-columns:1fr; } }
+  .report{ animation: rise 0.5s ease both; }
+  @keyframes rise{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;} }
+  .report .badge{ display:inline-block; font-size:0.7rem; padding:4px 10px; border-radius:999px; background:rgba(167,139,250,0.15); color:var(--accent); margin-bottom:14px; text-transform:uppercase; letter-spacing:0.05em;}
+  .report h2{ font-size:1.4rem; font-weight:500; margin-bottom:16px;}
+  .subcard{ background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:14px;}
+  .subcard h4{ font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--accent); margin-bottom:10px;}
+  .subcard p, .subcard li{ font-size:0.9rem; line-height:1.6; color:#e4e4e7;}
+  .subcard ul{ padding-left:18px;}
+  .pill-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
+  .pill{ background:rgba(244,114,182,0.15); color:var(--accent2); padding:5px 12px; border-radius:999px; font-size:0.76rem;}
+
+  .verdict{ margin-top:24px; }
+  .verdict h4{ color:var(--accent2); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;}
+  .verdict p{ font-size:0.98rem; line-height:1.7; color:#e4e4e7; }
+
+  .score-bars{ display:grid; gap:12px; margin-top:16px; }
+  .score-row{ display:grid; grid-template-columns: 120px 1fr 1fr; gap:10px; align-items:center; font-size:0.8rem; color:var(--muted); }
+  .bar-track{ height:10px; background:rgba(255,255,255,0.06); border-radius:6px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:6px; transition: width 0.6s ease; }
+  .bar-fill.a{ background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .bar-fill.b{ background: linear-gradient(90deg, #38bdf8, #4ade80); }
+
+  footer{ text-align:center; margin-top:50px; color:var(--muted); font-size:0.78rem;}
+  footer a{ color:var(--accent); text-decoration:none;}
+  #advPanel{ display:none; margin-top:16px;}
+  .toggle-adv{ cursor:pointer; color:var(--accent); font-size:0.8rem; margin-top:6px; display:inline-block;}
+</style>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<div class="wrap">
+  <header>
+    <h1>RivalScan</h1>
+    <p>Compare two competitors side-by-side — positioning, pricing, content strategy, and a scored verdict.</p>
+  </header>
+
+  <div class="glass">
+    <div class="row">
+      <div>
+        <label>Firecrawl API Key</label>
+        <input id="fcKey" type="password" placeholder="fc-xxxxxxxxxxxxxxxx" autocomplete="off">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Competitor A Domain</label>
+        <input id="domainA" type="text" placeholder="e.g. competitor-a.com">
+      </div>
+      <div>
+        <label>Competitor B Domain (optional — leave blank for single scan)</label>
+        <input id="domainB" type="text" placeholder="e.g. competitor-b.com">
+      </div>
+    </div>
+
+    <span class="toggle-adv" onclick="toggleAdv()">⚙ Optional: add an LLM key for a sharper verdict</span>
+    <div id="advPanel">
+      <div class="row">
+        <div>
+          <label>OpenAI-compatible API Key (optional)</label>
+          <input id="llmKey" type="password" placeholder="sk-xxxxxxxx">
+        </div>
+        <div>
+          <label>Model (optional)</label>
+          <input id="llmModel" type="text" placeholder="gpt-4o-mini" value="gpt-4o-mini">
+        </div>
+      </div>
+      <p class="hint">Without a key, RivalScan uses a built-in scoring rubric based on pricing transparency, content velocity, and messaging clarity.</p>
+    </div>
+
+    <button class="primary" id="runBtn" onclick="scan()" style="width:100%; margin-top:16px;">🕵️ Run Comparison</button>
+    <p class="hint">Get a free Firecrawl key at <a href="https://firecrawl.dev" target="_blank">firecrawl.dev</a>.</p>
+  </div>
+
+  <div id="status"></div>
+  <div id="output"></div>
+
+  <footer>Built with Firecrawl · runs entirely in your browser · nothing is stored</footer>
+</div>
+
+<script>
+const FC_BASE = "https://api.firecrawl.dev/v1";
+
+function setStatus(html){ document.getElementById('status').innerHTML = html; }
+function toggleAdv(){
+  const p = document.getElementById('advPanel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+function normalizeDomain(d){ return d.trim().replace(/^https?:\/\//,"").replace(/\/$/,""); }
+
+async function withRetry(fn, attempts=2, baseDelay=600){
+  for(let i=0;i<attempts;i++){
+    try{ return await fn(); }
+    catch(err){ if(i === attempts-1) return null; await new Promise(r=>setTimeout(r, baseDelay*(i+1))); }
+  }
+}
+
+async function scrape(url, key){
+  return withRetry(async () => {
+    const res = await fetch(`${FC_BASE}/scrape`, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({ url, formats:["markdown"] })
+    });
+    if(!res.ok) throw new Error("fetch failed");
+    const data = await res.json();
+    return (data && data.data && data.data.markdown) ? data.data.markdown : (data.markdown || "");
+  });
+}
+
+async function gatherIntel(domain, key){
+  const [home, pricing, blog] = await Promise.all([
+    scrape(`https://${domain}`, key),
+    scrape(`https://${domain}/pricing`, key),
+    scrape(`https://${domain}/blog`, key)
+  ]);
+  return { home: home || "", pricing: pricing || "", blog: blog || "" };
+}
+
+function extractFirstLines(text, n){
+  return text.split("\n").map(l=>l.trim()).filter(l => l.length > 40 && !l.startsWith("|")).slice(0,n);
+}
+function extractPricePoints(text){
+  const matches = text.match(/\$\s?\d+(\.\d{1,2})?(\s?\/\s?(mo|month|user|yr|year))?/gi) || [];
+  return [...new Set(matches)].slice(0,6);
+}
+function countBlogEntries(text){
+  return (text.match(/^#{2,3}\s/gm) || []).length;
+}
+
+function scoreDomain(intel){
+  const pricingScore = extractPricePoints(intel.pricing || intel.home).length > 0 ? 30 : 5;
+  const contentScore = Math.min(countBlogEntries(intel.blog) * 6, 35);
+  const clarityLines = extractFirstLines(intel.home, 5);
+  const clarityScore = Math.min(clarityLines.join(" ").length / 20, 35);
+  return Math.round(pricingScore + contentScore + clarityScore);
+}
+
+function heuristicReport(domain, intel){
+  const positioning = extractFirstLines(intel.home, 3);
+  const prices = extractPricePoints(intel.pricing || intel.home);
+  const blogTopics = extractFirstLines(intel.blog, 4).map(l => l.replace(/^#+\s*/,""));
+  const score = scoreDomain(intel);
+  return {
+    domain,
+    positioning: positioning.length ? positioning : ["No clear headline extracted — homepage may be JS-heavy."],
+    prices: prices.length ? prices : ["No pricing detected — may use custom quotes."],
+    blogTopics: blogTopics.length ? blogTopics : ["No /blog found or different path used."],
+    score
+  };
+}
+
+function buildVerdict(a, b){
+  if(!b) return `${a.domain} scores ${a.score}/100 on transparency, content velocity, and messaging clarity.`;
+  const leader = a.score >= b.score ? a : b;
+  const trailer = a.score >= b.score ? b : a;
+  const gap = Math.abs(a.score - b.score);
+  return `${leader.domain} currently outperforms ${trailer.domain} by ${gap} points, mainly driven by ${leader.prices[0] && !leader.prices[0].includes('No') ? 'clearer pricing transparency' : 'stronger content output'}. The clearest opening for a fast-follow demo is building a live comparison page that tracks both domains' pricing and blog cadence automatically — something neither is doing today.`;
+}
+
+async function llmVerdict(a, b, key, model){
+  const prompt = `Compare these two competitor intel summaries and give a sharp 3-sentence verdict plus one concrete growth/demo opportunity. Return strict JSON: {"verdict":"..."}\n\nA: ${JSON.stringify(a)}\n\nB: ${b ? JSON.stringify(b) : "N/A"}`;
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Authorization": `Bearer ${key}` },
+    body: JSON.stringify({ model: model || "gpt-4o-mini", messages:[{role:"user", content: prompt}], temperature:0.7 })
+  });
+  if(!res.ok) throw new Error("llm failed");
+  const data = await res.json();
+  const content = data.choices[0].message.content;
+  const match = content.match(/\{[\s\S]*\}/);
+  if(!match) throw new Error("parse failed");
+  return JSON.parse(match[0]).verdict;
+}
+
+function renderReportCard(report, side){
+  return `
+    <div class="glass report">
+      <span class="badge">Competitor ${side}</span>
+      <h2>${report.domain}</h2>
+      <div class="subcard">
+        <h4>Positioning</h4>
+        <ul>${report.positioning.map(p=>`<li>${p}</li>`).join("")}</ul>
+      </div>
+      <div class="subcard">
+        <h4>Pricing Signals</h4>
+        <div class="pill-row">${report.prices.map(p=>`<span class="pill">${p}</span>`).join("")}</div>
+      </div>
+      <div class="subcard">
+        <h4>Content Topics</h4>
+        <ul>${report.blogTopics.map(b=>`<li>${b}</li>`).join("")}</ul>
+      </div>
+    </div>
+  `;
+}
+
+async function scan(){
+  const btn = document.getElementById('runBtn');
+  const fcKey = document.getElementById('fcKey').value.trim();
+  let domainA = document.getElementById('domainA').value.trim();
+  let domainB = document.getElementById('domainB').value.trim();
+  const llmKey = document.getElementById('llmKey').value.trim();
+  const llmModel = document.getElementById('llmModel').value.trim();
+  const outputEl = document.getElementById('output');
+  outputEl.innerHTML = "";
+
+  if(!fcKey || !domainA){
+    setStatus('<span style="color:#ff8f8f">⚠ Enter a Firecrawl API key and at least Competitor A.</span>');
+    return;
+  }
+  domainA = normalizeDomain(domainA);
+  domainB = domainB ? normalizeDomain(domainB) : null;
+
+  btn.disabled = true;
+  setStatus(`<span class="spinner"></span> Scraping ${domainB ? '2 domains' : '1 domain'} in parallel...`);
+
+  try{
+    const [intelA, intelB] = await Promise.all([
+      gatherIntel(domainA, fcKey),
+      domainB ? gatherIntel(domainB, fcKey) : Promise.resolve(null)
+    ]);
+
+    const reportA = heuristicReport(domainA, intelA);
+    const reportB = intelB ? heuristicReport(domainB, intelB) : null;
+
+    setStatus('<span class="spinner"></span> Scoring and building verdict...');
+
+    let verdict;
+    if(llmKey){
+      try{ verdict = await llmVerdict(reportA, reportB, llmKey, llmModel); }
+      catch(e){ verdict = buildVerdict(reportA, reportB); }
+    } else {
+      verdict = buildVerdict(reportA, reportB);
+    }
+
+    setStatus(`✅ Comparison ready`);
+
+    const grid = document.createElement('div');
+    grid.className = domainB ? 'compare-grid' : '';
+    grid.innerHTML = renderReportCard(reportA, 'A') + (reportB ? renderReportCard(reportB, 'B') : '');
+    outputEl.appendChild(grid);
+
+    const scoreCard = document.createElement('div');
+    scoreCard.className = 'glass verdict';
+    scoreCard.innerHTML = `
+      <h4>📊 Opportunity Score</h4>
+      <div class="score-bars">
+        <div class="score-row">
+          <span>${reportA.domain}</span>
+          <div class="bar-track"><div class="bar-fill a" style="width:${reportA.score}%"></div></div>
+          <span>${reportA.score}/100</span>
+        </div>
+        ${reportB ? `
+        <div class="score-row">
+          <span>${reportB.domain}</span>
+          <div class="bar-track"><div class="bar-fill b" style="width:${reportB.score}%"></div></div>
+          <span>${reportB.score}/100</span>
+        </div>` : ''}
+      </div>
+      <h4 style="margin-top:20px;">💡 Verdict & Opportunity</h4>
+      <p>${verdict}</p>
+    `;
+    outputEl.appendChild(scoreCard);
+
+  }catch(err){
+    setStatus(`<span style="color:#ff8f8f">⚠ ${err.message}</span>`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
