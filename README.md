@@ -1,5 +1,5 @@
 # 🕵️ RivalScan
-**[→ Live Demo](https://trendcrawl.netlify.app)**
+**[→ Live Demo](https://rival-scan.netlify.app)**
 
 **Side-by-side competitor intelligence, powered by Firecrawl.**
 
